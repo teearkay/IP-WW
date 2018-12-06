@@ -1,93 +1,130 @@
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/opencv.hpp>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/opencv.hpp"
+#include <bits/stdc++.h>
 #include <iostream>
-#include <opencv2/imgproc.hpp>
-
-using namespace std;
 using namespace cv;
+using namespace std;
 
-int main()
 
-{
-
- int i,j;
-
+ int redhigh=256,redlow=150,bluehigh=100,bluelow=0,greenhigh=100,greenlow=0;
 
  VideoCapture vid(0);
 
- Mat frame;
- namedWindow("win",WINDOW_NORMAL);
+ Mat img;
 
-	while(1)
 
-	{
-		vid>>frame;
-		//cout<<frame.cols<<endl;
-				//cout<<frame.rows<<endl;
 
-		for(i=0;i<frame.rows;i++)
-		{	
-			for(j=0;j<frame.cols;j++)
-		   {
-		   		//cout<<i<<" "<<j<<endl;
-				if( (frame.at<Vec3b>(i,j)[2] > 150)&&(frame.at<Vec3b>(i,j)[2] < 256)&&(frame.at<Vec3b>(i,j)[1] > 0)
-					&&(frame.at<Vec3b>(i,j)[1] < 100)&&(frame.at<Vec3b>(i,j)[0] > 0)&&(frame.at<Vec3b>(i,j)[0] < 100) );
-				else
-				{
-					frame.at<Vec3b>(i,j)[2] = 0;
-					frame.at<Vec3b>(i,j)[1] = 0;
-					frame.at<Vec3b>(i,j)[0] = 0;
-				}
-			}
-		}
-		Mat bwimg(frame.rows,frame.cols,CV_8UC1,Scalar(0));
-		for(i=0;i<bwimg.rows;i++)
-		{
-			for(j=0;j<bwimg.cols;j++)
-			{
-				bwimg.at<uchar>(i,j)=(frame.at<Vec3b>(i,j)[2]+frame.at<Vec3b>(i,j)[1]+frame.at<Vec3b>(i,j)[0])/3;
-				if(bwimg.at<uchar>(i,j)>70)
-					bwimg.at<uchar>(i,j)=255;
-				else 
-					bwimg.at<uchar>(i,j)=0;
-			}
-		}
-		/*
-		for(i=0;i<bwimg.rows;i++)
-		{
-			for(j=0;j<bwimg.cols;j++)
-			{
-				if((bwimg.at<uchar>(i,j)!=255)&&(bwimg.at<uchar>(i,j)!=0))
-					cout << i <<" "<<j<<endl;
-			}
-		}
-		*/
-	Mat bwimg1(frame.rows,frame.cols,CV_8UC1,Scalar(0));
-		for(i=1;i<bwimg.rows-1;i++)
-			{
-				for(j=1;j<bwimg.cols-1;j++)
-				{
-					int max=bwimg.at<uchar>(i,j);
-					for(int l=i-1;l<i+2;l++)
-					{
-						for(int m=j-1;m<j+2;m++)
-						{
-							if(bwimg.at<uchar>(l,m)>max)
-								max=bwimg.at<uchar>(l,m);
-							//cout<<max<<endl;
-						}
-					}
-					bwimg1.at<uchar>(i,j)=max;
-				}
-			}
 
-  imshow("win",bwimg);
+int main()
+{
+
+int i,j,k,l;
+Mat temp(img.rows,img.cols,CV_8UC1,Scalar(0));
+namedWindow("win1",WINDOW_NORMAL);
+namedWindow("win2",WINDOW_NORMAL);
+namedWindow("win3",WINDOW_NORMAL);
+namedWindow("win4",WINDOW_NORMAL);
+
+ while(1)
+
+ {
+
+  vid>>img;
+vid>>temp;
+
+
+Mat img1;
+    for(i=0;i<img.rows;i++)
+        {
+            for(j=0;j<img.cols;j++)
+            {
+            if(img.at<Vec3b>(i,j)[0]>100 || img.at<Vec3b>(i,j)[0]<0)
+                temp.at<Vec3b>(i,j)={0,0,0};
+            if(img.at<Vec3b>(i,j)[1]>100 || img.at<Vec3b>(i,j)[1]<0)
+                temp.at<Vec3b>(i,j)={0,0,0};
+            if(img.at<Vec3b>(i,j)[2]>255 || img.at<Vec3b>(i,j)[2]<150)
+                temp.at<Vec3b>(i,j)={0,0,0};
+            }
+           
+           
+       
+        }
+   
+imshow("win1",temp);
+erode(temp,temp,Mat());
+erode(temp,temp,Mat());
+dilate(temp,temp,Mat());
+dilate(temp,temp,Mat());
+ blur(temp,temp,Size(3,3));
+
+
+    imshow("win2",temp);
+      Mat img2(temp.rows,temp.cols,CV_8UC1,Scalar(0));
+    vector<vector<Point> > contours;
+  vector<Vec4i> hierarchy;
+    Canny( temp,img2 , 100, 100*3, 3 );
+ 
+  findContours( img2, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+     Mat drawing = Mat::zeros( img2.size(), CV_8UC3 );
+  for( int i = 0; i< contours.size(); i++ )
+     {
+       drawContours( drawing, contours, i, Scalar(0,0,255), 2, 8, hierarchy, 0, Point() );
+     }
+       
+        imshow("win4",drawing);
+  
+    imshow("win3",img2);
+    int largest_area=0;
+    for( int i = 0; i< contours.size(); i++ ) // iterate through each contour.
+      {
+       double a=contourArea( contours[i]);  //  Find the area of contour
+       if(a>largest_area)
+    {
+       largest_area=a;
+                       //Store the index of largest contour
+      
+    }
+    }
+    //cout<<largest_area<<endl;
+    float velocity;
+    if(largest_area<5100&&largest_area>100)
+    velocity = 127;
+    if(largest_area<100)
+      velocity=0;
+    else if(largest_area>100000)
+        velocity = -127;
+    else velocity = 127 - (largest_area-5100)*254/(100000-5100);
+    cout<<"velocity is "<< velocity <<endl;
+ Mat grey,binary;
+        cvtColor( drawing, grey, COLOR_BGR2GRAY );
+        threshold( grey, binary, 50,255,THRESH_BINARY );
+        Moments m = moments(binary,true);
+        int cx=m.m10/m.m00;
+        int cy=m.m01/m.m00;
+        int y,z;
+        z=img.cols/2-cx;
+        //cout<<"z="<<z<<endl;
+        if(z>-30 && z<30)
+            y=0;
+        if(z>270)
+          y=270*127/90;
+        if(z<-270&&z>-1000)
+          y=(-270)*127/90;
+        if (z<-1000000000)
+          y=0;
+        else
+            y=z*127/90;
+        cout<<" angular speed is "<<y<<endl;
+       
 
   waitKey(10);
 
- 	}
+ 
+}
 
- return 0;
 
+
+return 0;
 }
