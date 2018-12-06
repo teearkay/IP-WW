@@ -1,3 +1,6 @@
+//Submitted by: Tanishq Kishnani
+//18MT10044
+
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/core/core.hpp"
@@ -9,7 +12,7 @@ using namespace std;
 
 
  int redhigh=256,redlow=150,bluehigh=100,bluelow=0,greenhigh=100,greenlow=0;
-
+ //The above values are set according to my laptop.
  VideoCapture vid(0);
 
  Mat img;
