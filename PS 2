@@ -1,0 +1,164 @@
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <math.h>
+#define pi 3.14159
+
+using namespace std;
+using namespace cv;
+
+int rh=95,rl=0,gh=215,gl=124,bh=227,bl=96;
+int count1=0;
+int cj1=0,ci1=0;
+int arci[190],arcj[190];
+int k=0;
+float slope;
+int flag=0;
+
+int main()
+{
+	namedWindow("vid",WINDOW_NORMAL);
+	//namedWindow("drawing1",WINDOW_NORMAL);
+	//namedWindow("or",WINDOW_NORMAL);
+	VideoCapture vid("./AirHockey.mp4");
+	Mat frame;
+	Mat frameorig;
+	//cout<<"FPS: "<<vid.get(CV_CAP_PROP_FPS)<<" FOURCC: "<<vid.get(CV_CAP_PROP_FOURCC)<<endl;
+	while(vid.grab())
+	{
+		//if(count1==50)
+		//	vid >> frameorig1
+		vid >> frame;
+		//imwrite("img1.jpg",frame);
+		Mat frame1(720,1280,CV_8UC1,Scalar(0));
+		//imshow("or",frame);
+		for(int i=0;i<frame.rows;i++)
+		{
+			//cout<<i<<endl;
+			for(int j=0;j<frame.cols;j++)
+			{
+				if((j>(1280-1280*1/3))||(j<416));
+				else if((frame.at<Vec3b>(i,j)[2]<=rh)&&(frame.at<Vec3b>(i,j)[2]>=rl)&&(frame.at<Vec3b>(i,j)[1]<=gh)&&(frame.at<Vec3b>(i,j)[1]>=gl)&&(frame.at<Vec3b>(i,j)[0]<=bh)&&(frame.at<Vec3b>(i,j)[0]>=bl))
+					frame1.at<uchar>(i,j)=255;
+			}
+		}
+		erode(frame1,frame1,Mat());
+		erode(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		dilate(frame1,frame1,Mat());
+		blur(frame1,frame1,Size(3,3));
+		Mat img2(frame1.rows,frame1.cols,CV_8UC1,Scalar(0));
+    	vector<vector<Point> > contours;
+  		vector<Vec4i> hierarchy;
+    	Canny( frame1,img2 , 100, 100*3, 3 );
+  		findContours( img2, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+     	Mat drawing = Mat::zeros( img2.size(), CV_8UC3 );
+  		for( int i = 0; i< contours.size(); i++ )
+	     {
+	       drawContours( drawing, contours, i, Scalar(0,0,255), 2, 8, hierarchy, 0, Point() );
+	     }
+        imshow("win4",drawing);
+  		//imshow("win3",img2);
+
+		Mat grey,binary;
+    	cvtColor( drawing, grey, COLOR_BGR2GRAY );
+    	threshold( grey, binary, 50,255,THRESH_BINARY );
+    	Moments m = moments(binary,true);
+		int cj=m.m10/m.m00;
+		int ci=m.m01/m.m00;
+		if((cj<-1000000000)||(ci<-1000000000))
+		{
+			ci=0;cj=0;
+			flag=0;
+		}
+		else 
+		{
+			arci[k]=ci; arcj[k]=cj;
+			//cout<<"array: " <<arci[k]<<" "<< arcj[k]<<endl;
+			flag=1;
+			k++;
+		}
+		
+		Mat newfrm(drawing.rows,drawing.cols,CV_8UC1,Scalar(0));
+		if((k>=2)&&flag&&(arci[k-1]-arci[k-2]))
+		{
+			slope=(float)(arci[k-1]-arci[k-2])/(float)(arcj[k-1]-arcj[k-2]);
+
+			//cout<<slope<<endl;
+			for(int i=0;i<drawing.rows;i++)
+			{
+				for(int j=0;j<drawing.cols;j++)
+				{
+					if(j==416)
+						newfrm.at<uchar>(i,j)=255;
+					if( abs((i-ci)/(float)(j-cj)-slope)<=0.008 )
+					{
+						Point c={cj,ci};
+						circle(newfrm,c,15,255,-1);
+						newfrm.at<uchar>(i,j)=255;
+						//cout<<"poop"<<endl;
+						if(((i==0)||(i==drawing.rows-1))&&(j>416))
+						{
+							for(int l=0;l<drawing.rows;l++)
+							{
+								for(int r=0;r<drawing.cols;r++)
+								{
+									if( abs((l-i)/(float)(r-j)-(pi-slope))<=0.01 )
+									{
+										newfrm.at<uchar>(l,r)=255;
+										if(r>416)
+										{
+											if((l==0)||(l==drawing.rows-1))
+											{
+												for(int a=0;a<drawing.rows;a++)
+												{
+													for(int b=0;b<drawing.cols;b++)
+													{
+														if( abs((a-l)/(float)(b-r)-slope)<=0.01 )
+															newfrm.at<uchar>(a,b)=255;	
+														else if(b==416)
+														{
+															Point b;
+															b.x=416;
+															b.y=a;
+															//circle(newfrm,b,10,255,-1);
+														}
+													}
+												}
+											}
+										}
+										else if(r==416)
+										{
+											Point a;
+											a.x=416;
+											a.y=l;
+											circle(newfrm,a,10,255,-1);
+										}
+									}
+								}
+							}
+						}
+						else if(j==416)
+						{
+							Point d={j,i};
+							circle(newfrm,d,10,255,-1);
+						}
+					} 
+
+				}
+			}
+			//cout<<slope<<" "<<arci[k-1]<<" "<<arcj[k-1]<<endl;
+			//cout <<atan(slope)*(180/pi)<<endl;
+		}
+		imshow("vid",newfrm);
+		// 720*1280
+		count1++;
+		waitKey(33);
+	}
+	return 0;
+}
