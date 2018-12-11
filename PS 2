@@ -85,8 +85,16 @@ int main()
 		}
 		
 		Mat newfrm(drawing.rows,drawing.cols,CV_8UC1,Scalar(0));
-		for(int i=0;i<newfrm.rows;i++)
+		for(int i=180;i<580;i++)
+		{
 			newfrm.at<uchar>(i,416)=255;
+			newfrm.at<uchar>(i,854)=255;
+		}
+		for(int j=416;j<854;j++)
+		{
+			newfrm.at<uchar>(180,j)=255;
+			newfrm.at<uchar>(580,j)=255;
+		}
 
 		if((k>=2)&&flag&&(arci[k-1]-arci[k-2]))
 		{
