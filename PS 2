@@ -85,39 +85,45 @@ int main()
 		}
 		
 		Mat newfrm(drawing.rows,drawing.cols,CV_8UC1,Scalar(0));
+		for(int i=0;i<newfrm.rows;i++)
+			newfrm.at<uchar>(i,416)=255;
+
 		if((k>=2)&&flag&&(arci[k-1]-arci[k-2]))
 		{
 			slope=(float)(arci[k-1]-arci[k-2])/(float)(arcj[k-1]-arcj[k-2]);
 
 			//cout<<slope<<endl;
-			for(int i=0;i<drawing.rows;i++)
+			for(int i=180;i<580;i++)
 			{
-				for(int j=0;j<drawing.cols;j++)
+				for(int j=400;j<854;j++)
 				{
-					if(j==416)
-						newfrm.at<uchar>(i,j)=255;
+					int fl=1;
 					if( abs((i-ci)/(float)(j-cj)-slope)<=0.008 )
 					{
 						Point c={cj,ci};
 						circle(newfrm,c,15,255,-1);
 						newfrm.at<uchar>(i,j)=255;
+						if(j==416)
+							fl=0;
 						//cout<<"poop"<<endl;
-						if(((i==0)||(i==drawing.rows-1))&&(j>416))
+						if(((i==180)||(i==580-1))&&(fl))
 						{
-							for(int l=0;l<drawing.rows;l++)
+							for(int l=180;l<580;l++)
 							{
-								for(int r=0;r<drawing.cols;r++)
+								for(int r=400;r<854;r++)
 								{
 									if( abs((l-i)/(float)(r-j)-(pi-slope))<=0.01 )
 									{
+										if(r==416)
+											fl=0;
 										newfrm.at<uchar>(l,r)=255;
-										if(r>416)
+										if(fl)
 										{
-											if((l==0)||(l==drawing.rows-1))
+											if((l==180)||(l==580-1))
 											{
-												for(int a=0;a<drawing.rows;a++)
+												for(int a=180;a<580;a++)
 												{
-													for(int b=0;b<drawing.cols;b++)
+													for(int b=400;b<854;b++)
 													{
 														if( abs((a-l)/(float)(b-r)-slope)<=0.01 )
 															newfrm.at<uchar>(a,b)=255;	
@@ -158,7 +164,7 @@ int main()
 		imshow("vid",newfrm);
 		// 720*1280
 		count1++;
-		waitKey(33);
+		waitKey(100);
 	}
 	return 0;
 }
